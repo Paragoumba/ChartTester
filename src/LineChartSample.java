@@ -1,66 +1,116 @@
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.concurrent.Task;
-import javafx.embed.swt.FXCanvas;
+import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.stage.Stage;
 
-import javax.swing.*;
-import java.util.Random;
-
-
 public class LineChartSample extends Application {
 
-    @Override
-    public void start(Stage stage) {
+    @FXML
+    LineChart<Number, Number> levelLineChart;
 
-        stage.setTitle("Line Chart Sample");
+    @FXML
+    LineChart<Number, Number> powerLineChart;
 
-        //defining the axes
-        final NumberAxis xAxis = new NumberAxis();
-        final NumberAxis yAxis = new NumberAxis();
+    @FXML
+    LineChart<Number, Number> freqLineChart;
 
-        xAxis.setLabel("Number of Month");
-
-        //creating the chart
-        final LineChart<Number,Number> lineChart = new LineChart<>(xAxis, yAxis);
-
-        lineChart.setTitle("Stock Monitoring, 2010");
+    public void initialize(){
 
         //defining a series
-        XYChart.Series<Number, Number> series = new XYChart.Series<>();
-        series.setName("bite");
+        XYChart.Series<Number, Number> level = new XYChart.Series<>();
+        level.setName("Normes FR");
 
-        Scene scene = new Scene(lineChart,800,600);
-        lineChart.getData().add(series);
+        levelLineChart.getData().add(level);
+        levelLineChart.setAnimated(false);
+        levelLineChart.getXAxis().setLabel("Temps (ms)");
+        levelLineChart.getYAxis().setLabel("Niveau (dbm)");
 
-        stage.setScene(scene);
-        stage.show();
+        //level.getNode().setStyle("-fx-stroke: black;");
 
-        Task task = new Task<Void>(){
+        XYChart.Series<Number, Number> power = new XYChart.Series<>();
+        power.setName("Normes FR");
 
-            @Override
-            protected Void call() throws Exception {
+        powerLineChart.getData().add(power);
+        powerLineChart.setAnimated(false);
+        powerLineChart.getXAxis().setLabel("Temps (ms)");
+        powerLineChart.getYAxis().setLabel("Puissance (W)");
 
-                while (true){
+        //power.getNode().setStyle("-fx-stroke: black;");
 
-                    Platform.runLater(() -> series.getData().add(new XYChart.Data<>(Math.random() * 10, Math.random() * 10)));
+        XYChart.Series<Number, Number> freq = new XYChart.Series<>();
+        freq.setName("Normes");
+
+        freqLineChart.getData().add(freq);
+        freqLineChart.setAnimated(false);
+        freqLineChart.getXAxis().setLabel("Frequence (Hz)");
+        freqLineChart.getYAxis().setLabel("Unité arbitraire");
+
+        Thread loop = new Thread(() -> {
+
+            long start = System.currentTimeMillis();
+            double dbmMax = 20;
+
+            while (true) {
+
+                long time = System.currentTimeMillis() - start;
+
+                Platform.runLater(() -> {
+
+                    /*if (level.getData().size() > 15) {
+
+                        level.getData().remove(0);
+
+                    }
+
+                    if (power.getData().size() > 15) {
+
+                        power.getData().remove(0);
+
+                    }*/
+
+                    level.getData().add(new XYChart.Data<>(time, dbmMax));
+                    power.getData().add(new XYChart.Data<>(time,  Math.pow(10, dbmMax / 10 - 3)));
+
+                });
+
+                try {
 
                     Thread.sleep(1000);
 
-                    System.out.println("test");
+                } catch (InterruptedException e) {
+
+                    e.printStackTrace();
+
                 }
-
             }
-        };
+        });
 
-        Thread thread = new Thread(task);
-        thread.setDaemon(true);
-        thread.start();
+        loop.setDaemon(true);
+        loop.start();
+
+        freq.getData().add(new XYChart.Data<>(0, 0));
+        freq.getData().add(new XYChart.Data<>(2.4, 0));
+        freq.getData().add(new XYChart.Data<>(2.4, 1));
+        freq.getData().add(new XYChart.Data<>(2.4, 0));
+        freq.getData().add(new XYChart.Data<>(5, 0));
+        freq.getData().add(new XYChart.Data<>(5, 1));
+        freq.getData().add(new XYChart.Data<>(5, 0));
+        freq.getData().add(new XYChart.Data<>(10, 0));
+    }
+
+    @Override
+    public void start(Stage stage) throws Exception {
+
+        Parent root = FXMLLoader.load(getClass().getResource("sample.fxml"));
+
+        stage.setTitle("Line Chart Sample");
+        stage.setScene(new Scene(root));
+        stage.show();
     }
 
     public static void main(String[] args) {
